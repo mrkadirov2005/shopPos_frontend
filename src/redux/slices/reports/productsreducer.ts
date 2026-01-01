@@ -16,7 +16,7 @@ const initialState: AuthState = {
   reports: [],
   report: {
     day: 0,
-    id: "",
+    id: 0,
     log: "",
     month: 0,
     shop_id: "",
@@ -41,7 +41,7 @@ const authSlice = createSlice({
       })
       .addCase(getReportsThunk.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.reports = action.payload.data;
+        state.reports = action.payload.data as unknown as Report[];
         state.status = "fulfilled";
       })
       .addCase(getReportsThunk.rejected, (state, action) => {

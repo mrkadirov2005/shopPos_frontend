@@ -26,17 +26,24 @@ export interface Admin {
   branch:number
 }
 export interface Report{
-  id:number,
-  report_name:string,
-  generated_at:string,
-  shop_id:string | null
+  day: number;
+    id: number;
+    log: string;
+    month: number;
+    shop_id: string;
+    target_id: string;
+    year: number,
 
 }
 export const exampleReport: Report = {
+  day: 1,
   id: 1,
-  report_name: "Monthly Sales",
-  generated_at: new Date().toISOString(),
-  shop_id: "shop-uuid"
+  log: "Sample report log",
+  month: 1,
+  shop_id: "SHOP001",
+  target_id: "TARGET001",
+  year: 2024
+
 };
 exampleReport
 
