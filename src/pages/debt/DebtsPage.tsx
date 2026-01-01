@@ -11,7 +11,7 @@ import {
 } from "../../redux/selectors";
 import { DEFAULT_ENDPOINT, ENDPOINTS } from "../../config/endpoints";
 import { toast } from "react-toastify";
-import { Search, Plus, Edit2, Trash2, Check, X, DollarSign, Eye, ArrowUpDown, ChevronUp, ChevronDown } from "lucide-react";
+import { Search, Plus, Edit2, Trash2, Check, X, DollarSign, Eye, ArrowUpDown, ChevronUp, ChevronDown, Filter, Download } from "lucide-react";
 import type { Admin } from "../../../types/types";
 
 /* ================= TYPES ================= */
@@ -63,6 +63,10 @@ export default function DebtManagement() {
   const [searchName, setSearchName] = useState("");
   const [filterBranch, setFilterBranch] = useState("");
   const [filterStatus, setFilterStatus] = useState<"all" | "returned" | "unreturned">("all");
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [filterByDateRange, setFilterByDateRange] = useState(false);
+  const [filterStartDate, setFilterStartDate] = useState("");
+  const [filterEndDate, setFilterEndDate] = useState("");
 
   // Sorting
   const [sortKey, setSortKey] = useState<SortKey>("date");
@@ -101,8 +105,8 @@ export default function DebtManagement() {
         headers: {
           "Content-Type": "application/json",
           authorization: token ?? "",
-          shop_id: shop_id?.toString() ?? "",
         },
+        body: JSON.stringify({ shop_id }),
       });
 
       if (!res.ok) {
@@ -127,8 +131,8 @@ export default function DebtManagement() {
         headers: {
           "Content-Type": "application/json",
           authorization: token ?? "",
-          shop_id: shop_id?.toString() ?? "",
         },
+        body: JSON.stringify({ shop_id }),
       });
 
       if (!res.ok) {
@@ -140,6 +144,132 @@ export default function DebtManagement() {
     } catch (err) {
       console.error(err);
       toast.error("Failed to fetch statistics");
+    }
+  };
+
+  const fetchUnreturnedDebts = async () => {
+    try {
+      const toastId = toast.loading("📋 Loading unreturned debts...");
+      const res = await fetch(`${DEFAULT_ENDPOINT}${ENDPOINTS.debts.unreturned}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          authorization: token ?? "",
+        },
+        body: JSON.stringify({ shop_id }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch unreturned debts");
+      }
+
+      const json = await res.json();
+      setDebts(json.data || []);
+      toast.update(toastId, {
+        render: `✅ Loaded ${json.data?.length || 0} unreturned debts`,
+        type: "success",
+        isLoading: false,
+        autoClose: 3000,
+      });
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to fetch unreturned debts");
+    }
+  };
+
+  const fetchDebtsByBranch = async (branchId: string) => {
+    try {
+      const toastId = toast.loading("🏢 Loading branch debts...");
+      const res = await fetch(`${DEFAULT_ENDPOINT}${ENDPOINTS.debts.byBranch}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          authorization: token ?? "",
+          branch_id: branchId,
+        },
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch branch debts");
+      }
+
+      const json = await res.json();
+      setDebts(json.data || []);
+      toast.update(toastId, {
+        render: `✅ Loaded ${json.data?.length || 0} debts for this branch`,
+        type: "success",
+        isLoading: false,
+        autoClose: 3000,
+      });
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to fetch branch debts");
+    }
+  };
+
+  const fetchDebtsByCustomer = async (customerName: string) => {
+    if (!customerName.trim()) {
+      fetchDebts();
+      return;
+    }
+
+    try {
+      const toastId = toast.loading("🔍 Searching debts...");
+      const res = await fetch(`${DEFAULT_ENDPOINT}${ENDPOINTS.debts.byCustomer}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          authorization: token ?? "",
+        },
+        body: JSON.stringify({ name: customerName, shop_id }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch customer debts");
+      }
+
+      const json = await res.json();
+      setDebts(json.data || []);
+      toast.update(toastId, {
+        render: `✅ Found ${json.data?.length || 0} debts for "${customerName}"`,
+        type: "success",
+        isLoading: false,
+        autoClose: 3000,
+      });
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to fetch customer debts");
+    }
+  };
+
+  const fetchDebtById = async (debtId: string) => {
+    try {
+      const toastId = toast.loading("📄 Loading debt details...");
+      const res = await fetch(`${DEFAULT_ENDPOINT}${ENDPOINTS.debts.byId}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          authorization: token ?? "",
+        },
+        body: JSON.stringify({ id: debtId }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch debt");
+      }
+
+      const json = await res.json();
+      setSelectedDebt(json.data);
+      setShowDebtDetail(true);
+      toast.update(toastId, {
+        render: "✅ Debt details loaded",
+        type: "success",
+        isLoading: false,
+        autoClose: 2000,
+      });
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to fetch debt details");
     }
   };
 
@@ -221,6 +351,7 @@ export default function DebtManagement() {
     }
 
     try {
+      const toastId = toast.loading("💾 Creating debt...");
       const productNamesString = formData.product_names.join(", ");
       const totalAmount = calculateTotalFromProducts(selectedProducts);
 
@@ -249,11 +380,16 @@ export default function DebtManagement() {
       setShowCreateModal(false);
       setFormData({ name: "", amount: "0", product_names: [], branch_id: "" });
       setSelectedProducts([]);
-      toast.success("Debt created successfully");
+      toast.update(toastId, {
+        render: `✅ Debt created for ${json.data.name}`,
+        type: "success",
+        isLoading: false,
+        autoClose: 3000,
+      });
       fetchStatistics();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      toast.error("Failed to create debt");
+      toast.error(`❌ Failed to create debt: ${err.message}`);
     }
   };
 
@@ -263,6 +399,7 @@ export default function DebtManagement() {
     if (!editingDebt) return;
 
     try {
+      const toastId = toast.loading("✏️ Updating debt...");
       const res = await fetch(`${DEFAULT_ENDPOINT}${ENDPOINTS.debts.update}`, {
         method: "POST",
         headers: {
@@ -290,16 +427,22 @@ export default function DebtManagement() {
       setEditingDebt(null);
       setFormData({ name: "", amount: "0", product_names: [], branch_id: "" });
       setSelectedProducts([]);
-      toast.success("Debt updated successfully");
+      toast.update(toastId, {
+        render: "✅ Debt updated successfully",
+        type: "success",
+        isLoading: false,
+        autoClose: 3000,
+      });
       fetchStatistics();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      toast.error("Failed to update debt");
+      toast.error(`❌ Failed to update debt: ${err.message}`);
     }
   };
 
   const handleMarkAsReturned = async (id: string) => {
     try {
+      const toastId = toast.loading("⏳ Marking as returned...");
       const res = await fetch(`${DEFAULT_ENDPOINT}${ENDPOINTS.debts.mark_returned}`, {
         method: "POST",
         headers: {
@@ -315,11 +458,16 @@ export default function DebtManagement() {
 
       const json = await res.json();
       setDebts(debts.map((d) => (d.id === json.data.id ? json.data : d)));
-      toast.success("Debt marked as returned");
+      toast.update(toastId, {
+        render: "✅ Debt marked as returned",
+        type: "success",
+        isLoading: false,
+        autoClose: 3000,
+      });
       fetchStatistics();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      toast.error("Failed to mark debt as returned");
+      toast.error(`❌ Failed to mark debt as returned: ${err.message}`);
     }
   };
 
@@ -327,6 +475,7 @@ export default function DebtManagement() {
     if (!confirm("Are you sure you want to delete this debt?")) return;
 
     try {
+      const toastId = toast.loading("🗑️ Deleting debt...");
       const res = await fetch(`${DEFAULT_ENDPOINT}${ENDPOINTS.debts.delete}`, {
         method: "DELETE",
         headers: {
@@ -341,12 +490,17 @@ export default function DebtManagement() {
       }
 
       setDebts(debts.filter((d) => d.id !== id));
-      toast.success("Debt deleted successfully");
+      toast.update(toastId, {
+        render: "✅ Debt deleted successfully",
+        type: "success",
+        isLoading: false,
+        autoClose: 3000,
+      });
       fetchStatistics();
       setShowDebtDetail(false);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      toast.error("Failed to delete debt");
+      toast.error(`❌ Failed to delete debt: ${err.message}`);
     }
   };
 
@@ -389,6 +543,52 @@ export default function DebtManagement() {
     return sortDirection === "asc" ? <ChevronUp size={16} /> : <ChevronDown size={16} />;
   };
 
+  const formatDateForComparison = (d: Debt) => {
+    const dateStr = `${d.year}-${String(d.month).padStart(2, "0")}-${String(d.day).padStart(2, "0")}`;
+    return new Date(dateStr);
+  };
+
+  const isDateInRange = (debt: Debt): boolean => {
+    if (!filterByDateRange || !filterStartDate || !filterEndDate) return true;
+
+    const debtDate = formatDateForComparison(debt);
+    const startDate = new Date(filterStartDate);
+    const endDate = new Date(filterEndDate);
+
+    return debtDate >= startDate && debtDate <= endDate;
+  };
+
+  const exportToCSV = () => {
+    try {
+      const headers = ["Date", "Customer", "Products", "Amount", "Branch", "Status"];
+      const rows = filteredAndSorted.map((debt) => [
+        formatDate(debt),
+        debt.name,
+        debt.product_names,
+        debt.amount,
+        getBranchName(debt.branch_id),
+        debt.isreturned ? "Returned" : "Pending",
+      ]);
+
+      const csvContent = [
+        headers.join(","),
+        ...rows.map((row) => row.map((cell) => `"${cell}"`).join(",")),
+      ].join("\n");
+
+      const blob = new Blob([csvContent], { type: "text/csv" });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `debts_${new Date().toISOString().split("T")[0]}.csv`;
+      link.click();
+      window.URL.revokeObjectURL(url);
+      toast.success("✅ Debts exported to CSV");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to export debts");
+    }
+  };
+
   /* ================= FILTER + SORT ================= */
 
   const filteredAndSorted = useMemo(() => {
@@ -408,6 +608,10 @@ export default function DebtManagement() {
       list = list.filter((d) => !d.isreturned);
     }
 
+    if (filterByDateRange) {
+      list = list.filter((d) => isDateInRange(d));
+    }
+
     list.sort((a, b) => {
       const dir = sortDirection === "asc" ? 1 : -1;
       switch (sortKey) {
@@ -425,7 +629,7 @@ export default function DebtManagement() {
     });
 
     return list;
-  }, [debts, searchName, filterBranch, filterStatus, sortKey, sortDirection]);
+  }, [debts, searchName, filterBranch, filterStatus, sortKey, sortDirection, filterByDateRange, filterStartDate, filterEndDate]);
 
   const totals = useMemo(() => {
     return filteredAndSorted.reduce(
@@ -522,7 +726,12 @@ export default function DebtManagement() {
                 type="text"
                 placeholder="Search by customer name..."
                 value={searchName}
-                onChange={(e) => setSearchName(e.target.value)}
+                onChange={(e) => {
+                  setSearchName(e.target.value);
+                  if (e.target.value.length > 2) {
+                    fetchDebtsByCustomer(e.target.value);
+                  }
+                }}
                 className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -531,7 +740,14 @@ export default function DebtManagement() {
           {/* Branch Filter */}
           <select
             value={filterBranch}
-            onChange={(e) => setFilterBranch(e.target.value)}
+            onChange={(e) => {
+              setFilterBranch(e.target.value);
+              if (e.target.value) {
+                fetchDebtsByBranch(e.target.value);
+              } else {
+                fetchDebts();
+              }
+            }}
             className="px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">All Branches</option>
@@ -549,10 +765,85 @@ export default function DebtManagement() {
             className="px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="all">All Status</option>
-            <option value="unreturned">Unreturned</option>
-            <option value="returned">Returned</option>
+            <option value="unreturned">Unreturned Only</option>
+            <option value="returned">Returned Only</option>
           </select>
+
+          {/* Advanced Filters Toggle */}
+          <button
+            onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+            className="px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium flex items-center gap-2"
+          >
+            <Filter size={18} /> Advanced
+          </button>
+
+          {/* Export Button */}
+          <button
+            onClick={exportToCSV}
+            className="px-4 py-2.5 border border-green-300 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition font-medium flex items-center gap-2"
+          >
+            <Download size={18} /> Export
+          </button>
+
+          {/* Quick Filter Buttons */}
+          <button
+            onClick={() => {
+              setFilterStatus("unreturned");
+              fetchUnreturnedDebts();
+            }}
+            className="px-4 py-2.5 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition font-medium text-sm"
+          >
+            Unreturned
+          </button>
         </div>
+
+        {/* Advanced Filters */}
+        {showAdvancedFilters && (
+          <div className="p-4 bg-blue-50 rounded-lg border border-blue-200 mb-4">
+            <h3 className="font-semibold text-gray-800 mb-3">Advanced Filters</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                <input
+                  type="date"
+                  value={filterStartDate}
+                  onChange={(e) => setFilterStartDate(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                <input
+                  type="date"
+                  value={filterEndDate}
+                  onChange={(e) => setFilterEndDate(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div className="flex items-end gap-2">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={filterByDateRange}
+                    onChange={(e) => setFilterByDateRange(e.target.checked)}
+                    className="w-5 h-5 text-blue-600 rounded"
+                  />
+                  <span className="text-sm font-medium text-gray-700">Filter by Range</span>
+                </label>
+                <button
+                  onClick={() => {
+                    setFilterByDateRange(false);
+                    setFilterStartDate("");
+                    setFilterEndDate("");
+                  }}
+                  className="ml-auto px-3 py-2 text-xs bg-white border border-gray-300 rounded hover:bg-gray-50"
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Filtered Totals */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
@@ -690,10 +981,7 @@ export default function DebtManagement() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-1">
                         <button
-                          onClick={() => {
-                            setSelectedDebt(debt);
-                            setShowDebtDetail(true);
-                          }}
+                          onClick={() => fetchDebtById(debt.id)}
                           className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors duration-200"
                           title="View Details"
                         >

@@ -1,6 +1,6 @@
 // export const DEFAULT_ENDPOINT="http://52.206.53.151:3000"
-export const DEFAULT_ENDPOINT="https://shoppos.m-kadirov.uz"
-// export const DEFAULT_ENDPOINT="http://localhost:3000"
+// export const DEFAULT_ENDPOINT="https://shoppos.m-kadirov.uz"
+export const DEFAULT_ENDPOINT="http://localhost:3000"
 
 
 
@@ -60,11 +60,20 @@ export const ENDPOINTS={
         get_all_reports:"/report/shop"
     },
     branches:{
-        getAllBranches:"/shop/branches"
+        getShops:"/shop",
+        getShopBranches:"/shop/branches",
+        getById:"/shop/getbranch",
+        create:"/shop/branch",
+        update:"/shop/branch",
+        delete:"/shop/branch"
     },
     logout:"/auth/logout",
     debts:{
         all:"/debts/all",
+        byId:"/debts/by-id",
+        byBranch:"/debts/by-branch",
+        byCustomer:"/debts/by-customer",
+        unreturned:"/debts/unreturned",
         create:"/debts/create",
         update:"/debts/update",
         mark_returned:"/debts/mark-returned",

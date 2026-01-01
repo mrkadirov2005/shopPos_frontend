@@ -21,7 +21,7 @@ export const getBranchesThunk = createAsyncThunk<
   async (payload, thunkAPI) => {
     try {
       const response = await fetch(
-        `${DEFAULT_ENDPOINT}${ENDPOINTS.branches.getAllBranches}`,
+        `${DEFAULT_ENDPOINT}${ENDPOINTS.branches.getShopBranches}`,
         {
           method: "POST",
           headers: {
