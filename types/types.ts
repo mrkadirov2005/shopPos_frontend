@@ -361,3 +361,11 @@ interface BRANCHES{
   id:number,
   name:string
 }
+const exampleBranchData:BRANCHES={
+  location:"Main Street",
+  employees:15,
+  shop_id:"shop-uuid",
+  id:1,
+  name:"Branch A"
+} 
+exampleBranchData

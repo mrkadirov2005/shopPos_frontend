@@ -1,5 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { type Brand, exampleBrand, type Branch } from "../../../../types/types";
+import {  type Branch } from "../../../../types/types";
 import { getBranchesThunk } from "./thunks/GetBranchesThunk";
 
 type BranchesState = {

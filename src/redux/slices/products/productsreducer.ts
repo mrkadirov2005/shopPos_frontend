@@ -51,7 +51,7 @@ state.isSingleProductOpen=action.payload.state
     state.error=action.payload as string
     state.status="rejected"
    })
-    builder.addCase(getProductsThunk.pending,(state,action)=>{
+    builder.addCase(getProductsThunk.pending,(state)=>{
     state.error=""
     state.isLoading=true
     state.error=""
@@ -82,7 +82,7 @@ state.isSingleProductOpen=action.payload.state
    })
 
   //  restock product
-     builder.addCase(restockProductThunk.fulfilled,(state,action)=>{
+     builder.addCase(restockProductThunk.fulfilled,(state)=>{
     state.error=""
     state.isLoading=false
     // updating the restocked value should be done here but temoporatily implemented with fetch
@@ -133,7 +133,7 @@ state.isSingleProductOpen=action.payload.state
     state.error=action.error.message
     state.status="rejected"
    })
-    builder.addCase(createSingleProductThunk.pending,(state,action)=>{
+    builder.addCase(createSingleProductThunk.pending,(state)=>{
     state.error=""
     state.isLoading=true
     state.error=""
