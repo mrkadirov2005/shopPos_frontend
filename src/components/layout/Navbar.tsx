@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { clearTokens, logout } from "../../redux/slices/auth/authSlice";
 import { getIsSuperUserFromStore, getUserFromStore } from "../../redux/selectors";
 import type { AppDispatch } from "../../redux/store";
-import { FullscreenExit, Logout } from "@mui/icons-material";
+import { Logout } from "@mui/icons-material";
 import { DEFAULT_ENDPOINT, ENDPOINTS } from "../../config/endpoints";
 import { useState } from "react";
 import { Button } from "@mui/material";

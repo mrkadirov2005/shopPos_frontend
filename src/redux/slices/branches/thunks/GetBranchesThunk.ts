@@ -1,7 +1,7 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { DEFAULT_ENDPOINT, ENDPOINTS } from "../../../../config/endpoints";
 import { toast } from "react-toastify";
-import type { Branch, Brand }from "../../../../../types/types";
+import type { Branch }from "../../../../../types/types";
 
 interface ComingResponse {
   message: string;

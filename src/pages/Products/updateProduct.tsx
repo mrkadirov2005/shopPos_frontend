@@ -32,7 +32,7 @@ import {
   Tab,
   Box,
 } from "@mui/material";
-import { Close, Info, Save, Delete, } from "@mui/icons-material";
+import { Close,Save } from "@mui/icons-material";
 import { FiAlertCircle, FiCheckCircle } from "react-icons/fi";
 import { Copy } from "lucide-react";
 
@@ -58,7 +58,6 @@ export default function UpdateProductForm({ type }: Props) {
   const [errors, setErrors] = useState<FormErrors>({});
   const [tabValue, setTabValue] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [originalForm, setOriginalForm] = useState<Product | null>(null);
 
   // =========================

@@ -24,7 +24,7 @@ import {
   convertIdToBrandName,
   convertIdToCategoryName
 } from "../../middleware/mid_funcs";
-import { Button, Input, LinearProgress, Menu, MenuItem, IconButton, Tooltip, Chip, Badge } from "@mui/material";
+import { Button,  LinearProgress, Menu, MenuItem, IconButton, Tooltip } from "@mui/material";
 import { DisabledByDefault, Edit, Refresh, Save, FilterList, WarningAmber, Delete } from "@mui/icons-material";
 import { FaDownload } from "react-icons/fa";
 import { exampleProduct, type Product } from "../../../types/types";

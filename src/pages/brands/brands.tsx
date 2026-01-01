@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Trash2, Edit, Plus, X } from 'lucide-react';
-import { exampleBrand, type Admin, type Brand } from '../../../types/types';
+import { exampleBrand,  type Brand } from '../../../types/types';
 import { DEFAULT_ENDPOINT, ENDPOINTS } from '../../config/endpoints';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch } from '../../redux/store';
-import { accessTokenFromStore, getAuthFromStore, getBrandsFromStore } from '../../redux/selectors';
+import {  getAuthFromStore, getBrandsFromStore } from '../../redux/selectors';
 import { getBrandsThunk } from '../../redux/slices/brands/thunk/getAllBrands';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -15,7 +15,7 @@ const BrandCRUD = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [currentBrand, setCurrentBrand] = useState<Brand>(exampleBrand);
   const [loading, setLoading] = useState(false);
-  
+  currentBrand
   const [formData, setFormData] = useState({
     uuid: "",
     brand_name: '',
@@ -28,7 +28,7 @@ const BrandCRUD = () => {
 
   const dispatch = useDispatch<AppDispatch>();
   const authData = useSelector(getAuthFromStore);
-  const token = useSelector(accessTokenFromStore);
+  // const token = useSelector(accessTokenFromStore);
 
   // API base URL
 

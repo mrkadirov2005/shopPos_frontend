@@ -34,7 +34,6 @@ import { useDispatch, useSelector } from 'react-redux';
 import { getAuthFromStore, getCategoriesFromStore } from '../../redux/selectors';
 import {  type AppDispatch } from '../../redux/store';
 import { getCategoriesThunk } from '../../redux/slices/categories/thunk/getAllCategories';
-import { data } from 'react-router-dom';
 
 // TypeScript interfaces
 

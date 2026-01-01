@@ -5,8 +5,8 @@ import {
   accessTokenFromStore, 
   getAuthFromStore, 
   getBranchesFromStore, 
-  getBrandsFromStore, 
-  getCategoriesFromStore, 
+  // getBrandsFromStore, 
+  // getCategoriesFromStore, 
   getSingleProductFromStore 
 } from "../../redux/selectors";
 import { type AppDispatch } from "../../redux/store";
@@ -18,8 +18,6 @@ export default function UpdateProductForm() {
   const dispatch = useDispatch<AppDispatch>();
   const product = useSelector(getSingleProductFromStore);
   const authData = useSelector(getAuthFromStore);
-  const brands = useSelector(getBrandsFromStore);
-  const categories = useSelector(getCategoriesFromStore);
   const branches = useSelector(getBranchesFromStore).branches;  // Moved here for clarity
   const token = useSelector(accessTokenFromStore);
 

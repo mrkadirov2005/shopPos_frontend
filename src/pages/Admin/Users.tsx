@@ -8,7 +8,6 @@ import {
 import type { AppDispatch } from "../../redux/store";
 import { getShopAdminsThunk } from "../../redux/slices/admins/thunks/getAdminsthunk";
 import { updateShopAdminsThunk } from "../../redux/slices/admins/thunks/updateAdminThunk";
-import { addShopAdminsThunk } from "../../redux/slices/admins/thunks/addAdminThunk";
 import { type Permission, type Admin } from "../../../types/types";
 import { getAllPermissions } from "../../middleware/fetcherFunctions";
 import { deleteShopAdminsThunk } from "../../redux/slices/admins/thunks/deleteAdminThunk";
@@ -166,11 +165,9 @@ export default function Admins() {
       } else {
         // For creating new admin, you need to dispatch a create thunk
         // Using updateShopAdminsThunk for now as a workaround
-        const newAdmin: Partial<Admin> = {
-          ...formData,
-          shop_id,
-          permissions: [],
-        } as Partial<Admin>;
+      
+
+
         // Note: Ideally you should have an addAdminThunk here
         toast.success(`${formData.first_name} created successfully!`);
       }
