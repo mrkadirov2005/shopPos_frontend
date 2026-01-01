@@ -25,6 +25,20 @@ export interface Admin {
   accesstoken: string | null;
   branch:number
 }
+export interface Report{
+  id:number,
+  report_name:string,
+  generated_at:string,
+  shop_id:string | null
+
+}
+export const exampleReport: Report = {
+  id: 1,
+  report_name: "Monthly Sales",
+  generated_at: new Date().toISOString(),
+  shop_id: "shop-uuid"
+};
+exampleReport
 
 export const exampleAdmin: Admin = {
   id: 1,
