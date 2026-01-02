@@ -15,11 +15,12 @@ export const checkoutSale = createAsyncThunk(
       payment_method: string;
       token?: string;
       branch:number;
+      profit?: number;
     },
     thunkAPI
   ) => {
     try {
-      const { products, admin_name, admin_number, shop_id, payment_method, token, branch } = payload;
+      const { products, admin_name, admin_number, shop_id, payment_method, token, branch, profit: customProfit } = payload;
 
       if (!products.length) {
         return thunkAPI.rejectWithValue("Cart is empty");
@@ -36,8 +37,8 @@ export const checkoutSale = createAsyncThunk(
         0
       );
 
-      const profit =total_price;
-      // TODO correct profit management
+      const profit = customProfit !== undefined ? customProfit : total_price;
+      // Use the custom profit if provided, otherwise default to total_price
 
       // ---- Date & time fields ----
       const now = new Date();

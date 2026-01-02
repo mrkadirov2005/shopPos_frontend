@@ -2,12 +2,14 @@ import { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import type { RootState } from "../../redux/store";
 import {
+  accessTokenFromStore,
   getUserFromStore,
   getshopidfromstrore,
 } from "../../redux/selectors";
 import type { Admin, SuperUser } from "../../../types/types";
 import { FiUser, FiPhone, FiMail, FiCalendar, FiDollarSign, FiTrendingUp, FiShoppingBag, FiCheck, FiSave } from "react-icons/fi";
 import { updateGeneralSettings } from "../../redux/slices/settings/settingsSlice";
+import { DEFAULT_ENDPOINT, ENDPOINTS } from "../../config/endpoints";
 
 export default function Profile() {
   const dispatch = useDispatch();
@@ -33,6 +35,7 @@ export default function Profile() {
   const [isSavingShop, setIsSavingShop] = useState(false);
   const [showShopSuccess, setShowShopSuccess] = useState(false);
 
+  const token=useSelector(accessTokenFromStore)
   useEffect(() => {
     if (user) {
       const admin = user as Admin;
@@ -60,20 +63,47 @@ export default function Profile() {
     setDateFormat(shopSettings.dateFormat);
   }, [shopSettings]);
 
-  const handleSaveShop = () => {
+  const handleSaveShop = async () => {
     setIsSavingShop(true);
-    dispatch(updateGeneralSettings({
-      storeName,
-      currency,
-      timezone,
-      dateFormat,
-    }));
-    
-    setTimeout(() => {
+    try {
+      // Get the authorization token from localStorage or your auth state
+      ; // Adjust based on where you store your token
+      
+      const response = await fetch(`${DEFAULT_ENDPOINT}${ENDPOINTS.shop.update}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "authorization": `${token}` , 
+          "uuid": shop_id ?? "",
+        },
+        body: JSON.stringify({
+          id: shop_id, // Shop ID from Redux store
+          name: storeName, // Updated store name
+          
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        dispatch(updateGeneralSettings({
+          storeName,
+          currency,
+          timezone,
+          dateFormat,
+        }));
+        setIsSavingShop(false);
+        setShowShopSuccess(true);
+        setTimeout(() => setShowShopSuccess(false), 3000);
+      } else {
+        setIsSavingShop(false);
+        alert(data.message || "Failed to update shop");
+      }
+    } catch (err) {
+      console.error("Error updating shop:", err);
       setIsSavingShop(false);
-      setShowShopSuccess(true);
-      setTimeout(() => setShowShopSuccess(false), 3000);
-    }, 500);
+      alert("Server error while updating shop");
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {

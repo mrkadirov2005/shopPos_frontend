@@ -45,7 +45,11 @@ export const ENDPOINTS={
     sales: {
         getSales:"/sales/all",
         createSale:"/sales/",
-        getAdminSales:"/sales/admin/sales"
+        getAdminSales:"/sales/admin/sales",
+        updateSale:"/sales/update-sale",
+        deleteSale:"/sales/delete",
+        getSaleById:"/sales/get-sale"
+
     },
     admins:{
         get_all:"/admin/admins",
@@ -85,6 +89,9 @@ export const ENDPOINTS={
         restore:"/backup/restore",
         backuptoGoogleSheets:"/backup/backup-to-sheets",
         restoreFromSheets:"/backup/restore-from-sheets",
+    },
+    shop:{
+        update:"/shop/update_shop"
     }
    
 }

@@ -46,6 +46,14 @@ const salesSlice = createSlice({
       if (item) item.quantity = action.payload.quantity;
     },
 
+    updatePrice(
+      state,
+      action: PayloadAction<{ productid: string; price: number }>
+    ) {
+      const item = state.cart.find((i) => i.productid === action.payload.productid);
+      if (item) item.price = action.payload.price;
+    },
+
     setSales(state,action){
       state.sales=action.payload
     }
@@ -108,7 +116,7 @@ const salesSlice = createSlice({
   },
 });
 
-export const { addToCart, removeFromCart, clearCart, updateQuantity,setSales } =
+export const { addToCart, removeFromCart, clearCart, updateQuantity, updatePrice, setSales } =
   salesSlice.actions;
 
 export default salesSlice.reducer;

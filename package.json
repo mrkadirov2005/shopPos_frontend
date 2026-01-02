@@ -17,6 +17,7 @@
     "@reduxjs/toolkit": "^2.11.0",
     "axios": "^1.13.2",
     "framer-motion": "^12.23.26",
+    "jspdf": "^3.0.4",
     "lucide-react": "^0.562.0",
     "npx": "^3.0.0",
     "nvm": "^0.0.4",

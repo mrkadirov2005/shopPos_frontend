@@ -7,6 +7,7 @@ import {
   addToCart,
   removeFromCart,
   updateQuantity,
+  updatePrice,
   clearCart,
 } from "../../redux/slices/sales/salesReducer";
 import { checkoutSale } from "../../redux/slices/sales/thunks/checkoutSale";
@@ -37,7 +38,10 @@ export default function Sales() {
   const [query, setQuery] = useState("");
   const [brand, setBrand] = useState<string>("All");
   const [showPayment, setShowPayment] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<string>("cash");
+  const [paymentMethod, setPaymentMethod] = useState<string>("Naqd");
+  const [customPaymentMethod, setCustomPaymentMethod] = useState<string>("");
+  const [paidAmount, setPaidAmount] = useState<string>("");
+  const [customAdminName, setCustomAdminName] = useState<string>("");
   const [sortAnchorEl, setSortAnchorEl] = useState<null | HTMLElement>(null);
   const [sortType, setSortType] = useState<
     "default" | "low_stock" | "high_stock" | "not_available" | "expired" | "price_asc" | "price_desc"
@@ -142,17 +146,24 @@ export default function Sales() {
 
   const totals = useMemo(() => {
     const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    const discount = cart.reduce((sum, item) => sum + (item.price - item.netPrice) * item.quantity, 0);
-    return { total, discount, finalTotal: total - discount, products: cart.length };
-  }, [cart]);
+    const discount = cart.reduce((sum, item) => {
+      // Only calculate discount if the current price is greater than net price
+      const itemDiscount = item.price > item.netPrice ? (item.price - item.netPrice) * item.quantity : 0;
+      return sum + itemDiscount;
+    }, 0);
+    const paid = parseFloat(paidAmount) || 0;
+    const remaining = total - paid;
+    return { total, discount, finalTotal: total, products: cart.length, paid, remaining };
+  }, [cart, paidAmount]);
 
   function handleCheckout() {
     if (cart.length === 0) return;
+    setPaidAmount(totals.finalTotal.toString());
     setShowPayment(true);
   }
 
   async function handleConfirmPayment() {
-    const method = paymentMethod;
+    const method = paymentMethod === "boshqa" ? customPaymentMethod : paymentMethod;
     if (!user || !shop_id || !token) {
       alert("Missing user information. Please login again.");
       return;
@@ -196,20 +207,29 @@ export default function Sales() {
     }
 
     try {
+      // Use custom admin name if provided, otherwise use default logic
+      const finalAdminName = customAdminName.trim() 
+        ? customAdminName.trim() 
+        : (authData.isSuperAdmin ? adminName : authData.user?.uuid);
+
       await dispatch(
         checkoutSale({
           products: cart,
           admin_number: adminNumber,
           // @ts-ignore
-          admin_name: authData.isSuperAdmin ? adminName : authData.user?.uuid,
+          admin_name: finalAdminName,
           shop_id: shop_id,
           payment_method: method,
           token: token,
           branch: authData.isSuperAdmin ? 100 : 0,
+          profit: parseFloat(paidAmount) || 0,
+          total_net_price: parseFloat(paidAmount) || 0,
         })
       ).unwrap();
 
       setShowPayment(false);
+      setPaidAmount("");
+      setCustomAdminName("");
     } catch (error: any) {
       const errorMessage = typeof error === "string" ? error : error?.message;
       if (errorMessage && errorMessage !== "Checkout failed") {
@@ -510,10 +530,23 @@ export default function Sales() {
 
             {cart.map((product) => (
               <div key={product.productid} className="p-3 border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
-                <div className="flex items-start justify-between mb-2">
-                  <div>
-                    <div className="font-medium text-gray-900">{product.name}</div>
-                    <div className="text-xs text-gray-500">{formatter.format(product.price)} each</div>
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1">
+                    <div className="font-medium text-gray-900 mb-2">{product.name}</div>
+                    <div className="flex items-center gap-2 text-xs text-gray-600">
+                      <span>Price:</span>
+                      <input
+                        type="number"
+                        value={product.price}
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value);
+                          if (!isNaN(val) && val >= 0) {
+                            dispatch(updatePrice({ productid: product.productid, price: val }));
+                          }
+                        }}
+                        className="w-20 px-2 py-1 text-center border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
                   </div>
                   <button
                     onClick={() => handleRemoveFromCart(product.productid)}
@@ -524,20 +557,20 @@ export default function Sales() {
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
-                    <button
-                      onClick={() => handleChangeQty(product.productid, -1)}
-                      className="p-1 hover:bg-gray-200 rounded transition-colors"
-                    >
-                      <FiMinus size={16} />
-                    </button>
-                    <div className="w-8 text-center font-semibold text-sm">{product.quantity}</div>
-                    <button
-                      onClick={() => handleChangeQty(product.productid, 1)}
-                      className="p-1 hover:bg-gray-200 rounded transition-colors"
-                    >
-                      <FiPlus size={16} />
-                    </button>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-600">Qty:</span>
+                    <input
+                      type="number"
+                      min="1"
+                      value={product.quantity}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value);
+                        if (!isNaN(val) && val > 0) {
+                          dispatch(updateQuantity({ productid: product.productid, quantity: val }));
+                        }
+                      }}
+                      className="w-16 px-2 py-1 text-center border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
                   </div>
                   <div className="font-bold text-gray-900">{formatter.format(product.price * product.quantity)}</div>
                 </div>
@@ -561,25 +594,35 @@ export default function Sales() {
           <div className="sticky top-6 bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-4">
             <div className="flex items-center gap-2">
               <Receipt className="text-blue-600" />
-              <h3 className="font-bold text-lg">Order Summary</h3>
+              <h3 className="font-bold text-lg">Buyurtma Tafsilotlari</h3>
             </div>
 
             {/* ITEMS BREAKDOWN */}
             <div className="space-y-2 py-4 border-y border-gray-200">
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Items:</span>
+                <span className="text-gray-600">Mahsulotlar:</span>
                 <span className="font-semibold">{cart.length}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Subtotal:</span>
+                <span className="text-gray-600">Jami narxi:</span>
                 <span className="font-semibold">{formatter.format(totals.total)}</span>
               </div>
-              {totals.discount > 0 && (
-                <div className="flex justify-between text-sm text-green-600">
-                  <span>Discount:</span>
-                  <span className="font-semibold">-{formatter.format(totals.discount)}</span>
-                </div>
-              )}
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">To'langan:</span>
+                <input
+                  type="number"
+                  value={paidAmount}
+                  onChange={(e) => setPaidAmount(e.target.value)}
+                  className="w-24 px-2 py-1 border border-gray-300 rounded text-right font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="0.00"
+                />
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Qoldiq:</span>
+                <span className={`font-semibold ${totals.remaining > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                  {formatter.format(Math.abs(totals.remaining))}
+                </span>
+              </div>
             </div>
 
             {/* TOTAL */}
@@ -596,19 +639,48 @@ export default function Sales() {
                 <h4 className="font-semibold text-sm text-gray-900">Payment Method</h4>
                 <select
                   value={paymentMethod}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
+                  onChange={(e) => {
+                    setPaymentMethod(e.target.value);
+                    if (e.target.value !== "boshqa") {
+                      setCustomPaymentMethod("");
+                    }
+                  }}
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="cash">💵 Cash</option>
-                  <option value="card">💳 Card</option>
-                  <option value="mobile">📱 Mobile Pay</option>
+                  <option value="Naqd">💵 Naqd</option>
+                  <option value="Nasiya">💳 Nasiya</option>
+                  <option value="boshqa">📝 Boshqa</option>
                 </select>
+
+                {paymentMethod === "boshqa" && (
+                  <input
+                    type="text"
+                    value={customPaymentMethod}
+                    onChange={(e) => setCustomPaymentMethod(e.target.value)}
+                    placeholder="Enter payment method..."
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                )}
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Admin Name (Optional)</label>
+                  <input
+                    type="text"
+                    value={customAdminName}
+                    onChange={(e) => setCustomAdminName(e.target.value)}
+                    placeholder="Enter admin name (leave empty for default)..."
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
 
                 <div className="flex gap-2 pt-2">
                   <button
                     onClick={() => {
                       setShowPayment(false);
-                      setPaymentMethod("cash");
+                      setPaymentMethod("Naqd");
+                      setCustomPaymentMethod("");
+                      setPaidAmount("");
+                      setCustomAdminName("");
                     }}
                     className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors"
                   >
@@ -616,7 +688,7 @@ export default function Sales() {
                   </button>
                   <button
                     onClick={handleConfirmPayment}
-                    disabled={loading}
+                    disabled={loading || (paymentMethod === "boshqa" && !customPaymentMethod.trim())}
                     className="flex-1 px-3 py-2 rounded-lg text-sm font-medium text-white bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
                   >
                     {loading ? "Processing..." : "Confirm"}
