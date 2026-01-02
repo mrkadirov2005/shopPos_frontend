@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from "react";
 import type { Product } from "../../../types/types";
-import { FiPlus, FiMinus, FiTrash2, FiSearch, FiShoppingCart, FiAlertCircle } from "react-icons/fi";
+import {  FiTrash2, FiSearch, FiShoppingCart, FiAlertCircle } from "react-icons/fi";
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch } from "../../redux/store";
 import {
@@ -136,13 +136,13 @@ export default function Sales() {
     dispatch(removeFromCart(productId));
   }
 
-  function handleChangeQty(productId: string, delta: number) {
-    const item = cart.find((i) => i.productid === productId);
-    if (item) {
-      const newQuantity = Math.max(1, item.quantity + delta);
-      dispatch(updateQuantity({ productid: productId, quantity: newQuantity }));
-    }
-  }
+  // function handleChangeQty(productId: string, delta: number) {
+  //   const item = cart.find((i) => i.productid === productId);
+  //   if (item) {
+  //     const newQuantity = Math.max(1, item.quantity + delta);
+  //     dispatch(updateQuantity({ productid: productId, quantity: newQuantity }));
+  //   }
+  // }
 
   const totals = useMemo(() => {
     const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
